@@ -88,7 +88,7 @@ func main() {
 		err = portl2.Create(sw)
 
 		if err != nil {
-			log.Printf("Error in updating port xx: %s", err)
+			log.Printf("Error in updating port %s: %s", portl2.Interface.Name, err)
 			return
 		}
 
@@ -195,6 +195,27 @@ func main() {
 
 		if err != nil {
 			log.Printf("Error in creating VLAN %s: %s", vlan.VlanId, err)
+			return
+		}
+
+		log.Printf("VLAN Create Success")
+	}
+
+	if 1 == 2 {
+
+		vlan := aoscxgo.Vlan{
+			VlanId:      600,
+			Name:        "uplink VLAN",
+			Description: "uplink VLAN",
+			AdminState:  "up",
+		}
+
+		// if the vlan exists use
+		// err = vlan100.Update(sw)
+		err = vlan.Update(sw)
+
+		if err != nil {
+			log.Printf("Error in updating VLAN %s: %s", vlan.VlanId, err)
 			return
 		}
 
