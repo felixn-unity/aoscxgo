@@ -16,7 +16,7 @@ func main() {
 		},
 	)
 
-	if (sw.Cookie == nil) || (err != nil) {
+	if err != nil || sw == nil {
 		log.Printf("Failed to login to switch: %s", err)
 		return
 	}

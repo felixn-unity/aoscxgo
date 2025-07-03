@@ -65,37 +65,68 @@ func (c *Client) Logout() error {
 // login performs POST to create a cookie for authentication to the given IP with the provided credentials.
 func login(http_transport *http.Transport, ip string, rest_version string, username string, password string) (*http.Cookie, string, error) {
 	url := fmt.Sprintf("https://%s/rest/%s/login?username=%s&password=%s", ip, rest_version, username, password)
-	req, _ := http.NewRequest("POST", url, nil)
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create request: %w", err)
+	}
 	req.Header.Set("accept", "*/*")
 	req.Header.Set("x-use-csrf-token", "true")
 	req.Close = false
 
 	res, err := http_transport.RoundTrip(req)
-	if res.Status != "200 OK" {
-		log.Fatalf("Got error while connecting to switch %s Error %s", res.Status, err)
-		return nil, "", err
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to connect to switch: %w", err)
+	}
+	if res == nil {
+		return nil, "", fmt.Errorf("received nil response from switch")
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("login failed with status: %s", res.Status)
 	}
 
 	log.Printf("Login Successful")
 
-	csrf := res.Header["X-Csrf-Token"][0]
-	cookie := res.Cookies()[0]
+	// Check if CSRF token exists
+	csrfTokens := res.Header["X-Csrf-Token"]
+	if len(csrfTokens) == 0 {
+		return nil, "", fmt.Errorf("no CSRF token received from switch")
+	}
+	csrf := csrfTokens[0]
 
-	return cookie, csrf, err
+	// Check if cookies exist
+	cookies := res.Cookies()
+	if len(cookies) == 0 {
+		return nil, "", fmt.Errorf("no cookies received from switch")
+	}
+	cookie := cookies[0]
+
+	return cookie, csrf, nil
 }
 
 // logout performs POST to logout using a cookie from the given URL.
 func logout(http_transport *http.Transport, cookie *http.Cookie, csrf string, url string) *http.Response {
-	req, _ := http.NewRequest("POST", url, nil)
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		log.Printf("Failed to create logout request: %v", err)
+		return nil
+	}
 	req.Header.Set("accept", "*/*")
 	req.Header.Set("x-csrf-token", csrf)
 	req.Close = false
 
 	req.AddCookie(cookie)
 	res, err := http_transport.RoundTrip(req)
-	//Handle Error
-	if res.Status != "200 OK" {
-		log.Fatalf("Got error while logging out of switch %s Error %s", res.Status, err)
+	if err != nil {
+		log.Printf("Failed to logout from switch: %v", err)
+		return nil
+	}
+	if res == nil {
+		log.Printf("Received nil response during logout")
+		return nil
+	}
+	if res.StatusCode != http.StatusOK {
+		log.Printf("Logout failed with status: %s", res.Status)
+		return res
 	}
 
 	log.Printf("Logout Successful")
