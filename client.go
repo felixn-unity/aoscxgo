@@ -76,7 +76,7 @@ func login(http_transport *http.Transport, ip string, rest_version string, usern
 		return nil, "", err
 	}
 
-	fmt.Println("Login Successful")
+	log.Printf("Login Successful")
 
 	csrf := res.Header["X-Csrf-Token"][0]
 	cookie := res.Cookies()[0]
@@ -98,7 +98,7 @@ func logout(http_transport *http.Transport, cookie *http.Cookie, csrf string, ur
 		log.Fatalf("Got error while logging out of switch %s Error %s", res.Status, err)
 	}
 
-	fmt.Println("Logout Successful")
+	log.Printf("Logout Successful")
 
 	return res
 }

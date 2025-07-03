@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -90,8 +91,7 @@ func (v *VlanInterface) Create(c *Client) error {
 		if checkIPAddress(str_ipv4_1) {
 			postMap["ip4_address"] = v.Ipv4[0]
 		} else {
-			fmt.Println("THIS IS THE VALUE vvv")
-			fmt.Println(str_ipv4_1)
+			log.Printf("Invalid IPv4 address format: %s", str_ipv4_1)
 			status_str := "Invalid Required Value: Ipv4 - ensure addresses are in ipv4 format: " + str_ipv4_1
 			return &RequestError{
 				StatusCode: status_str,
@@ -102,12 +102,10 @@ func (v *VlanInterface) Create(c *Client) error {
 		var tmp_splice []string
 		for index := 1; index < len(v.Ipv4); index++ {
 			str_ipv4_tmp := fmt.Sprintf("%v", v.Ipv4[index])
-			fmt.Println("THIS IS THE VALUE vvv")
-			fmt.Println(str_ipv4_tmp)
-			fmt.Println(v.Ipv4)
 			if checkIPAddress(str_ipv4_tmp) {
 				tmp_splice = append(tmp_splice, str_ipv4_tmp)
 			} else {
+				log.Printf("Invalid IPv4 address format: %s", str_ipv4_tmp)
 				status_str := "Invalid Required Value: Ipv4 - ensure addresses are in ipv4 format: " + str_ipv4_tmp
 				return &RequestError{
 					StatusCode: status_str,
@@ -238,7 +236,7 @@ func (v *VlanInterface) Update(c *Client, use_put bool) error {
 			updateMap["ip4_address"] = str_ipv4_1
 			updateMap["ip4_address_secondary"] = nil
 		} else {
-			status_str := "Invalid Required Value: Ipv4 - ensure addresses are in poop ipv4 format: " + str_ipv4_1
+			status_str := "Invalid Required Value: Ipv4 - ensure addresses are in ipv4 format: " + str_ipv4_1
 			return &RequestError{
 				StatusCode: status_str,
 				Err:        errors.New("Update Error"),
@@ -250,7 +248,7 @@ func (v *VlanInterface) Update(c *Client, use_put bool) error {
 		if checkIPAddress(str_ipv4_1) {
 			updateMap["ip4_address"] = v.Ipv4[0]
 		} else {
-			status_str := "Invalid Required Value: Ipv4 - ensure addresses are in butt ipv4 format: \n" + str_ipv4_1
+			status_str := "Invalid Required Value: Ipv4 - ensure addresses are in ipv4 format: " + str_ipv4_1
 			return &RequestError{
 				StatusCode: status_str,
 				Err:        errors.New("Update Error"),
@@ -260,13 +258,11 @@ func (v *VlanInterface) Update(c *Client, use_put bool) error {
 		var tmp_splice []string
 		for index := 1; index < len(v.Ipv4); index++ {
 			str_ipv4_tmp := fmt.Sprintf("%v", v.Ipv4[index])
-			fmt.Println("THIS IS THE VALUE vvv")
-			fmt.Println(str_ipv4_tmp)
-			fmt.Println(v.Ipv4)
+			log.Printf("Processing IPv4 address: %s", str_ipv4_tmp)
 			if checkIPAddress(str_ipv4_tmp) {
 				tmp_splice = append(tmp_splice, str_ipv4_tmp)
 			} else {
-				status_str := "Invalid Required Value: Ipv4 - ensure addresses are in ipv4 fdafdas format: " + str_ipv4_tmp
+				status_str := "Invalid Required Value: Ipv4 - ensure addresses are in ipv4 format: " + str_ipv4_tmp
 				return &RequestError{
 					StatusCode: status_str,
 					Err:        errors.New("Update Error"),

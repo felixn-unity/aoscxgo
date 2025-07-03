@@ -111,6 +111,7 @@ func (v *Vlan) Delete(c *Client) error {
 
 	res, _ := get(c, url)
 
+	// If VLAN interface exists (200 OK), we need to fail - it must be deleted first
 	if res.Status == "200 OK" {
 		err_str := "VlanInterface " + vlan_interface_id + " exists - delete VlanInterface before deleting Vlan " + vlan_interface_id
 		return &RequestError{
@@ -118,13 +119,15 @@ func (v *Vlan) Delete(c *Client) error {
 			Err:        errors.New("Delete Error"),
 		}
 	}
+	// 404 is expected here - means no VLAN interface exists, which is what we want
 
 	vlan_str := strconv.Itoa(v.VlanId)
 
 	url = "https://" + c.Hostname + "/rest/" + c.Version + "/" + base_uri + "/" + vlan_str
 	res = delete(c, url)
 
-	if res.Status != "204 No Content" {
+	// Success cases: 204 No Content (deleted) or 404 Not Found (already doesn't exist)
+	if res.Status != "204 No Content" && res.Status != "404 Not Found" {
 		return &RequestError{
 			StatusCode: res.Status,
 			Err:        errors.New("Delete Error"),

@@ -84,7 +84,10 @@ func (fc *FullConfig) Create(c *Client) (*http.Response, error) {
 func (fc *FullConfig) Get(c *Client) error {
 	base_uri := "configs/running-config"
 	url := "https://" + c.Hostname + "/rest/" + c.Version + "/" + base_uri
-	res, _ := get_accept_text(c, url)
+	res, err := getAcceptText(c, url)
+	if err != nil {
+		return err
+	}
 
 	if res.Status != "200 OK" {
 		return &RequestError{
@@ -160,7 +163,10 @@ func (fc *FullConfig) CompareConfig(new_config string) string {
 func (fc *FullConfig) DownloadConfig(c *Client, filename string) error {
 	base_uri := "configs/running-config"
 	url := "https://" + c.Hostname + "/rest/" + c.Version + "/" + base_uri
-	res, _ := get_accept_text(c, url)
+	res, err := getAcceptText(c, url)
+	if err != nil {
+		return err
+	}
 
 	if res.Status != "200 OK" {
 		return &RequestError{
@@ -179,7 +185,7 @@ func (fc *FullConfig) DownloadConfig(c *Client, filename string) error {
 	// Use the content
 	bodyString := string(bodyBytes)
 
-	err := ioutil.WriteFile(filename, []byte(bodyString), 0644)
+	err = ioutil.WriteFile(filename, []byte(bodyString), 0644)
 	if err != nil {
 		panic(err)
 	}
