@@ -57,6 +57,67 @@ func main() {
 	log.Printf("Successfully connected to switch %s using API version %s", hostname, sw.Version)
 
 	if 1 == 2 {
+
+		port := aoscxgo.Interface{
+			Name:       "1/1/3",
+			AdminState: "up",
+		}
+
+		err = port.Update(sw)
+
+		if err != nil {
+			log.Printf("Error in updating port %s: %s", port.Name, err)
+			return
+		}
+
+		log.Printf("Port updated Success")
+	}
+
+	if 1 == 2 {
+
+		portl2 := aoscxgo.L2Interface{
+			Description: "employee",
+			Interface: aoscxgo.Interface{
+				Name:       "1/1/3",
+				AdminState: "up",
+			},
+			VlanMode: "access",
+			VlanTag:  100,
+		}
+
+		err = portl2.Create(sw)
+
+		if err != nil {
+			log.Printf("Error in updating port xx: %s", err)
+			return
+		}
+
+		log.Printf("Port updated Success")
+	}
+
+	if 1 == 2 {
+
+		portl2 := aoscxgo.L2Interface{
+			Description: "employee",
+			Interface: aoscxgo.Interface{
+				Name:       "1/1/3",
+				AdminState: "up",
+			},
+			VlanMode: "access",
+			VlanTag:  100,
+		}
+
+		err = portl2.Update(sw, true)
+
+		if err != nil {
+			log.Printf("Error in updating port xx: %s", err)
+			return
+		}
+
+		log.Printf("Port updated Success")
+	}
+
+	if 1 == 2 {
 		lagdel := aoscxgo.LagInterface{
 			Name: "lag60",
 		}
@@ -140,7 +201,7 @@ func main() {
 		log.Printf("VLAN Create Success")
 	}
 
-	if 1 == 1 {
+	if 1 == 2 {
 
 		vlandel := aoscxgo.Vlan{
 			VlanId: 600,
