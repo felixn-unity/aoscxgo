@@ -6,25 +6,27 @@ To login to the switch and create a client connection:
 package main
 
 import (
+
 	"log"
 
-	"github.com/aruba/aoscxgo"
+	"github.com/felixn-unity/aoscxgo"
+
 )
 
-func main() {
-	sw, err := aoscxgo.Connect(
-		&aoscxgo.Client{
-			Hostname:          "10.0.0.1",
-			Username:          "admin",
-			Password:          "admin",
-		},
-	)
+	func main() {
+		sw, err := aoscxgo.Connect(
+			&aoscxgo.Client{
+				Hostname:          "10.0.0.1",
+				Username:          "admin",
+				Password:          "admin",
+			},
+		)
 
-	if (sw.Cookie == nil) || (err != nil) {
-		log.Printf("Failed to login to switch: %s", err)
-		return
-	}
-	log.Printf("Login Success")
+		if (sw.Cookie == nil) || (err != nil) {
+			log.Printf("Failed to login to switch: %s", err)
+			return
+		}
+		log.Printf("Login Success")
 
 }
 
@@ -50,11 +52,10 @@ This will login to the switch and create a cookie to use for authentication in f
 
 Each API resource will have the following functions (exceptions may vary):
 
-  * Create
-  * Update
-  * Get
-  * GetStatus
-  * Delete
-
+  - Create
+  - Update
+  - Get
+  - GetStatus
+  - Delete
 */
 package aoscxgo

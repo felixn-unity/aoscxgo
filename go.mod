@@ -1,8 +1,8 @@
 module github.com/felixn-unity/aoscxgo
 
-go 1.23
+go 1.24
 
 require (
-	github.com/google/go-cmp v0.5.8
-	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
+	github.com/google/go-cmp v0.7.0
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 )

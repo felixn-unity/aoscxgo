@@ -14,7 +14,7 @@ package main
 import (
 	"log"
 
-	"github.com/aruba/aoscxgo"
+	"github.com/felixn-unity/aoscxgo"
 )
 
 func main() {
