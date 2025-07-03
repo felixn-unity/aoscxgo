@@ -1,0 +1,201 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# API Reference & Common Patterns
+
+## Client Connection Template
+
+```go
+// Basic connection setup
+sw, err := aoscxgo.Connect(&aoscxgo.Client{
+    Hostname:          "192.168.1.1",
+    Username:          "admin",
+    Password:          "password",
+    VerifyCertificate: false,
+})
+
+if (sw.Cookie == nil) || (err != nil) {
+    log.Printf("Failed to login to switch: %s", err)
+    return
+}
+defer sw.Logout()
+```
+
+## Resource Struct Patterns
+
+### VLAN Configuration
+Reference: [vlan.go](mdc:vlan.go)
+```go
+vlan := aoscxgo.Vlan{
+    VlanId:      100,
+    Name:        "production",
+    Description: "Production VLAN",
+    AdminState:  "up",
+}
+```
+
+### VLAN Interface (Layer 3)
+Reference: [vlan_interface.go](mdc:vlan_interface.go)
+```go
+vlanInterface := aoscxgo.VlanInterface{
+    Vlan: aoscxgo.Vlan{VlanId: 100},
+    Description: "Production Gateway",
+    Ipv4: []interface{}{"192.168.1.1/24"},
+    Vrf: "default",
+}
+```
+
+### LAG Interface
+Reference: [lag_interface.go](mdc:lag_interface.go)
+```go
+lag := aoscxgo.LagInterface{
+    Name:            "lag1",
+    Description:     "Uplink LAG",
+    AdminState:      "up",
+    VlanMode:        "trunk",
+    VlanIds:         []interface{}{100, 200},
+    TrunkAllowedAll: true,
+    LacpMode:        "active",
+}
+```
+
+### Layer 2 Interface
+Reference: [l2_interface.go](mdc:l2_interface.go)
+```go
+l2Interface := aoscxgo.L2Interface{
+    Name:       "1/1/1",
+    AdminState: "up",
+    VlanMode:   "access",
+    VlanTag:    100,
+}
+```
+
+### Layer 3 Interface
+Reference: [l3_interface.go](mdc:l3_interface.go)
+```go
+l3Interface := aoscxgo.L3Interface{
+    Name:        "1/1/1",
+    AdminState:  "up",
+    Ipv4:        []interface{}{"10.0.0.1/30"},
+    Description: "Point-to-point link",
+}
+```
+
+## Standard Method Patterns
+
+### Create Resource
+```go
+err := resource.Create(sw)
+if err != nil {
+    log.Printf("Error creating resource: %s", err)
+    return
+}
+```
+
+### Update Resource
+```go
+err := resource.Update(sw)
+if err != nil {
+    log.Printf("Error updating resource: %s", err)
+    return
+}
+```
+
+### Get Resource
+```go
+err := resource.Get(sw)
+if err != nil {
+    log.Printf("Error retrieving resource: %s", err)
+    return
+}
+```
+
+### Delete Resource
+```go
+err := resource.Delete(sw)
+if err != nil {
+    log.Printf("Error deleting resource: %s", err)
+    return
+}
+```
+
+### Check Resource Status
+```go
+if resource.GetStatus() {
+    log.Printf("Resource exists")
+} else {
+    log.Printf("Resource does not exist")
+}
+```
+
+## Error Handling Patterns
+
+### Custom Error Type
+Reference: [util.go](mdc:util.go)
+```go
+type RequestError struct {
+    StatusCode string
+    Err        error
+}
+
+func (r *RequestError) Error() string {
+    return fmt.Sprintf("Status: %s, Error: %v", r.StatusCode, r.Err)
+}
+```
+
+### Error Checking
+```go
+if err != nil {
+    if reqErr, ok := err.(*aoscxgo.RequestError); ok {
+        log.Printf("HTTP Error - Status: %s, Error: %v", reqErr.StatusCode, reqErr.Err)
+    } else {
+        log.Printf("General Error: %s", err)
+    }
+    return
+}
+```
+
+## Common Configuration Patterns
+
+### VLAN with Interface
+```go
+// 1. Create VLAN first
+vlan := aoscxgo.Vlan{
+    VlanId:      100,
+    Name:        "production",
+    AdminState:  "up",
+}
+err := vlan.Create(sw)
+
+// 2. Create VLAN interface
+vlanInterface := aoscxgo.VlanInterface{
+    Vlan: vlan,
+    Ipv4: []interface{}{"192.168.1.1/24"},
+}
+err = vlanInterface.Create(sw)
+```
+
+### LAG with Member Interfaces
+```go
+// 1. Create LAG
+lag := aoscxgo.LagInterface{
+    Name:       "lag1",
+    AdminState: "up",
+    LacpMode:   "active",
+}
+err := lag.Create(sw)
+
+// 2. Add member interfaces (implementation depends on interface type)
+```
+
+## HTTP Utility Functions
+Reference: [util.go](mdc:util.go)
+
+- `setupRequest()` - Create HTTP request with headers
+- `executeRequest()` - Execute HTTP request
+- `get()` - Perform GET request
+- `post()` - Perform POST request
+- `put()` - Perform PUT request
+- `delete()` - Perform DELETE request

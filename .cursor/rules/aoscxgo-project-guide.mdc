@@ -1,0 +1,99 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# AOS-CX Go Project Guide
+
+## Project Overview
+This is a Go package for managing AOS-CX switches via REST API. The minimum supported firmware version is 10.09.
+
+## Core Architecture
+
+### Client Connection
+- Main client is defined in [client.go](mdc:client.go) and [aoscxgo/client.go](mdc:aoscxgo/client.go)
+- Use `aoscxgo.Connect()` to establish connection with switch
+- Client struct contains hostname, credentials, cookie, and CSRF token
+- Always call `sw.Logout()` when done
+
+### Main Entry Point
+- [cmd/main.go](mdc:cmd/main.go) contains example usage and testing code
+- Shows patterns for creating VLANs, LAG interfaces, and other configurations
+
+### Resource Types
+The project follows a consistent pattern for each resource type:
+
+#### VLANs
+- [vlan.go](mdc:vlan.go) - Basic VLAN management
+- [vlan_interface.go](mdc:vlan_interface.go) - VLAN interface with IP addressing
+- [aoscxgo/vlan.go](mdc:aoscxgo/vlan.go) and [aoscxgo/vlan_interface.go](mdc:aoscxgo/vlan_interface.go) - Duplicate implementations
+
+#### Interfaces
+- [interface.go](mdc:interface.go) - Basic interface management
+- [l2_interface.go](mdc:l2_interface.go) - Layer 2 interface configuration
+- [l3_interface.go](mdc:l3_interface.go) - Layer 3 interface configuration
+- [lag_interface.go](mdc:lag_interface.go) - Link Aggregation Group interfaces
+
+### Common Patterns
+
+#### Standard Methods
+Each resource type implements these methods:
+- `Create(c *Client) error` - Create new resource
+- `Update(c *Client) error` - Update existing resource
+- `Get(c *Client) error` - Retrieve resource configuration
+- `GetStatus() bool` - Check if resource exists
+- `Delete(c *Client) error` - Remove resource
+
+#### Error Handling
+- Custom `RequestError` type defined in [util.go](mdc:util.go)
+- HTTP utilities for common operations (GET, POST, PUT, DELETE)
+
+## Key Files
+
+### Utilities
+- [util.go](mdc:util.go) - HTTP request utilities and error handling
+- [full_config.go](mdc:full_config.go) - Full configuration management
+
+### Documentation
+- [doc.go](mdc:doc.go) - Package documentation with usage examples
+- [README.md](mdc:README.md) - Project documentation
+
+## Usage Examples
+
+### Basic Connection
+```go
+sw, err := aoscxgo.Connect(&aoscxgo.Client{
+    Hostname: "switch-ip",
+    Username: "admin", 
+    Password: "password",
+    VerifyCertificate: false,
+})
+```
+
+### VLAN Management
+```go
+vlan := aoscxgo.Vlan{
+    VlanId: 100,
+    Name: "production",
+    Description: "Production VLAN",
+    AdminState: "up",
+}
+err = vlan.Create(sw)
+```
+
+### LAG Interface
+```go
+lag := aoscxgo.LagInterface{
+    Name: "lag1",
+    Description: "Uplink LAG",
+    AdminState: "up",
+    LacpMode: "active",
+}
+err = lag.Create(sw)
+```
+
+## Project Structure Notes
+- Duplicate files exist in root and `aoscxgo/` subdirectory
+- Main development appears to be in root directory
+- [cmd/main.go](mdc:cmd/main.go) contains test/example code with conditional blocks
+- Go modules defined in [go.mod](mdc:go.mod)

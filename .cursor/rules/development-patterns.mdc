@@ -1,0 +1,80 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Development Patterns & Best Practices
+
+## Code Organization
+
+### Resource Implementation Pattern
+When adding new resources, follow the established pattern seen in existing files:
+
+1. **Struct Definition**: Define the resource struct with JSON tags
+2. **Standard Methods**: Implement Create, Update, Get, GetStatus, Delete
+3. **Error Handling**: Use `RequestError` from [util.go](mdc:util.go)
+4. **HTTP Operations**: Use utility functions from [util.go](mdc:util.go)
+
+### Testing & Examples
+- [cmd/main.go](mdc:cmd/main.go) serves as both example and test code
+- Use conditional blocks (`if 1 == 2`) to disable/enable test sections
+- Always test connection first before resource operations
+
+## HTTP Client Patterns
+
+### Request Setup
+- Use `setupRequest()` from [util.go](mdc:util.go) for consistent headers
+- Include CSRF token and cookie for authentication
+- Set appropriate Content-Type headers
+
+### Response Handling
+- Check HTTP status codes before processing responses
+- Use `executeRequest()` for consistent error handling
+- Parse JSON responses into appropriate structs
+
+## Resource Management
+
+### VLAN Operations
+- VLANs must exist before creating VLAN interfaces
+- Use [vlan.go](mdc:vlan.go) for basic VLAN management
+- Use [vlan_interface.go](mdc:vlan_interface.go) for Layer 3 VLAN interfaces
+
+### Interface Configuration
+- Layer 2: [l2_interface.go](mdc:l2_interface.go)
+- Layer 3: [l3_interface.go](mdc:l3_interface.go)
+- LAG: [lag_interface.go](mdc:lag_interface.go)
+- Base interface: [interface.go](mdc:interface.go)
+
+### Connection Management
+- Always establish connection with `aoscxgo.Connect()`
+- Store client object for all subsequent operations
+- Call `sw.Logout()` to clean up session
+
+## Error Handling Strategy
+
+### Custom Error Types
+- Use `RequestError` for HTTP-related errors
+- Include status code and descriptive error messages
+- Check for nil client objects before operations
+
+### Validation
+- Validate required fields before API calls
+- Check for resource dependencies (e.g., VLAN exists before VLAN interface)
+- Use `GetStatus()` to verify resource existence
+
+## API Versioning
+- Default to v10.09 if not specified
+- Support for v10.10 available
+- Version string used in REST API URLs
+
+## Security Considerations
+- `VerifyCertificate` option for SSL/TLS validation
+- Cookie-based authentication with CSRF protection
+- Secure credential handling in Client struct
+
+## Development Workflow
+1. Test connection to switch first
+2. Create dependencies (VLANs before interfaces)
+3. Use conditional blocks for iterative testing
+4. Implement proper error handling and logging
+5. Clean up resources and logout when done
