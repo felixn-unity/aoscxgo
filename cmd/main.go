@@ -2,17 +2,50 @@ package main
 
 import (
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/felixn-unity/aoscxgo"
 )
 
 func main() {
+	// Get configuration from environment variables
+	hostname := os.Getenv("AOSCX_HOSTNAME")
+	if hostname == "" {
+		log.Fatal("AOSCX_HOSTNAME environment variable is required")
+	}
+
+	username := os.Getenv("AOSCX_USERNAME")
+	if username == "" {
+		username = "admin" // Default username
+	}
+
+	password := os.Getenv("AOSCX_PASSWORD")
+	if password == "" {
+		log.Fatal("AOSCX_PASSWORD environment variable is required")
+	}
+
+	// Optional: Certificate verification (defaults to false for development)
+	verifyCert := false
+	if certStr := os.Getenv("AOSCX_VERIFY_CERT"); certStr != "" {
+		if parsed, err := strconv.ParseBool(certStr); err == nil {
+			verifyCert = parsed
+		}
+	}
+
+	// Optional: API version (defaults to v10.09)
+	version := os.Getenv("AOSCX_VERSION")
+	if version == "" {
+		version = "v10.09"
+	}
+
 	sw, err := aoscxgo.Connect(
 		&aoscxgo.Client{
-			Hostname:          "yyyy",
-			Username:          "admin",
-			Password:          "xxxx",
-			VerifyCertificate: false,
+			Hostname:          hostname,
+			Username:          username,
+			Password:          password,
+			Version:           version,
+			VerifyCertificate: verifyCert,
 		},
 	)
 
@@ -20,6 +53,9 @@ func main() {
 		log.Printf("Failed to login to switch: %s", err)
 		return
 	}
+
+	log.Printf("Successfully connected to switch %s", hostname)
+
 	lagdel := aoscxgo.LagInterface{
 		Name: "lag60",
 	}
