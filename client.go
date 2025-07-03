@@ -2,8 +2,10 @@ package aoscxgo
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 )
@@ -23,6 +25,67 @@ type Client struct {
 	Transport         *http.Transport `json:"-"`
 }
 
+// fetchLatestAPIVersion fetches the latest API version from the switch
+func fetchLatestAPIVersion(transport *http.Transport, hostname string) (string, error) {
+	url := fmt.Sprintf("https://%s/rest", hostname)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create API version request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Close = false
+
+	res, err := transport.RoundTrip(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch API versions: %w", err)
+	}
+	if res == nil {
+		return "", fmt.Errorf("received nil response when fetching API versions")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch API versions, status: %s", res.Status)
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read API version response: %w", err)
+	}
+
+	// Parse JSON response and extract latest version
+	var apiResponse map[string]interface{}
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		return "", fmt.Errorf("failed to parse API version response: %w", err)
+	}
+
+	// Get the latest version
+	latest, exists := apiResponse["latest"]
+	if !exists {
+		return "", fmt.Errorf("latest version not found in API response")
+	}
+
+	latestMap, ok := latest.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("latest version has invalid format")
+	}
+
+	version, exists := latestMap["version"]
+	if !exists {
+		return "", fmt.Errorf("version not found in latest API response")
+	}
+
+	versionStr, ok := version.(string)
+	if !ok || versionStr == "" {
+		return "", fmt.Errorf("version is not a valid string")
+	}
+
+	log.Printf("Detected latest API version: %s", versionStr)
+	return versionStr, nil
+}
+
 // Connect creates connection to given Client object.
 func Connect(c *Client) (*Client, error) {
 	var err error
@@ -31,12 +94,27 @@ func Connect(c *Client) (*Client, error) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !c.VerifyCertificate},
 	}
 
-	if c.Version == "" || (c.Version != "v10.09" && c.Version == "v10.10") {
-		c.Version = "v10.09"
-	}
-
 	if c.Transport == nil {
 		c.Transport = tr
+	}
+
+	// Fetch the latest API version from the switch
+	latestVersion, err := fetchLatestAPIVersion(c.Transport, c.Hostname)
+	if err != nil {
+		log.Printf("Warning: Could not fetch latest API version, using fallback: %v", err)
+		// Fall back to user-specified version or default
+		if c.Version == "" {
+			c.Version = "v10.09" // Default fallback
+		}
+	} else {
+		// Use the latest version from the switch
+		c.Version = latestVersion
+		log.Printf("Using API version: %s", c.Version)
+	}
+
+	// Validate version format (should start with 'v')
+	if c.Version != "" && c.Version[0] != 'v' {
+		c.Version = "v" + c.Version
 	}
 
 	cookie, csrf, err := login(c.Transport, c.Hostname, c.Version, c.Username, c.Password)

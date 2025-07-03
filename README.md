@@ -3,6 +3,13 @@ aoscxgo
 
 aoscxgo is a golang package that allows users to connect to and configure AOS-CX switches using REST API. The minimum supported firmware version is 10.09.
 
+## Features
+
+- **Automatic API Version Detection**: Automatically detects and uses the latest API version supported by the switch
+- **Environment Variable Configuration**: Secure configuration using environment variables
+- **Comprehensive Error Handling**: Robust error handling with detailed error messages
+- **Full CRUD Operations**: Create, Read, Update, Delete operations for all supported resources
+
 Configuration
 =============
 
@@ -15,8 +22,15 @@ The recommended way to configure the switch connection is using environment vari
 | `AOSCX_HOSTNAME` | Yes | - | Switch hostname or IP address |
 | `AOSCX_PASSWORD` | Yes | - | Switch password |
 | `AOSCX_USERNAME` | No | `admin` | Switch username |
-| `AOSCX_VERSION` | No | `v10.09` | API version (`v10.09` or `v10.10`) |
+| `AOSCX_VERSION` | No | `auto-detect` | API version (will auto-detect if not specified) |
 | `AOSCX_VERIFY_CERT` | No | `false` | Enable SSL certificate verification |
+
+### API Version Detection
+
+The library automatically detects the latest API version supported by the switch by querying `https://<hostname>/rest`. This ensures optimal compatibility and access to the latest features. If auto-detection fails, it falls back to:
+
+1. User-specified `AOSCX_VERSION` environment variable
+2. Default version `v10.09`
 
 ### Setup Environment Variables
 
@@ -30,7 +44,7 @@ The recommended way to configure the switch connection is using environment vari
    AOSCX_HOSTNAME=192.168.1.100
    AOSCX_PASSWORD=your_password_here
    AOSCX_USERNAME=admin
-   AOSCX_VERSION=v10.09
+   # AOSCX_VERSION=v10.09  # Optional - will auto-detect if not specified
    AOSCX_VERIFY_CERT=false
    ```
 
@@ -44,7 +58,7 @@ Using aoscxgo
 
 ## Basic Connection
 
-The application will automatically read configuration from environment variables:
+The application will automatically read configuration from environment variables and detect the best API version:
 
 ```go
 package main
@@ -74,6 +88,7 @@ func main() {
 		log.Fatal("AOSCX_PASSWORD environment variable is required")
 	}
 
+	// The client will automatically detect the latest API version
 	sw, err := aoscxgo.Connect(
 		&aoscxgo.Client{
 			Hostname:          hostname,
@@ -87,13 +102,13 @@ func main() {
 		log.Printf("Failed to login to switch: %s", err)
 		return
 	}
-	log.Printf("Successfully connected to switch %s", hostname)
+	log.Printf("Successfully connected to switch %s using API version %s", hostname, sw.Version)
 }
 ```
 
 ## Manual Configuration (Alternative)
 
-You can also configure the client manually:
+You can also configure the client manually and specify a particular API version:
 
 ```go
 sw, err := aoscxgo.Connect(
@@ -101,6 +116,7 @@ sw, err := aoscxgo.Connect(
 		Hostname:          "10.0.0.1",
 		Username:          "admin",
 		Password:          "admin",
+		Version:           "v10.10", // Force specific version
 		VerifyCertificate: false,
 	},
 )
@@ -154,3 +170,8 @@ Each API resource will have the following functions (exceptions may vary):
    ```bash
    go run ./cmd/main.go
    ```
+
+The application will automatically:
+- Detect the latest API version supported by your switch
+- Connect using the optimal API version
+- Display the detected version in the log output

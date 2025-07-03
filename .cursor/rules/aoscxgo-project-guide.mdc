@@ -8,17 +8,32 @@ alwaysApply: false
 ## Project Overview
 This is a Go package for managing AOS-CX switches via REST API. The minimum supported firmware version is 10.09.
 
+## Key Features
+
+- **Automatic API Version Detection**: Queries the switch to determine the latest supported API version
+- **Environment Variable Configuration**: Secure configuration without hardcoded credentials
+- **Robust Error Handling**: Comprehensive error handling with graceful fallbacks
+- **Full Resource Management**: Complete CRUD operations for VLANs, interfaces, and LAG configurations
+
 ## Core Architecture
 
 ### Client Connection
-- Main client is defined in [client.go](mdc:client.go) and [aoscxgo/client.go](mdc:aoscxgo/client.go)
+- Main client is defined in [client.go](mdc:client.go)
 - Use `aoscxgo.Connect()` to establish connection with switch
-- Client struct contains hostname, credentials, cookie, and CSRF token
+- **API Version Detection**: Automatically queries `https://<hostname>/rest` to detect latest API version
+- Client struct contains hostname, credentials, cookie, CSRF token, and detected API version
 - Always call `sw.Logout()` when done
+
+### API Version Detection Flow
+1. **Fetch Available Versions**: GET request to `https://<hostname>/rest`
+2. **Parse JSON Response**: Extract "latest.version" field directly from the JSON response
+3. **Fallback Strategy**: If detection fails, use user-specified version or default to v10.09
+4. **Version Validation**: Ensure version format starts with 'v'
 
 ### Main Entry Point
 - [cmd/main.go](mdc:cmd/main.go) contains example usage and testing code
 - Shows patterns for creating VLANs, LAG interfaces, and other configurations
+- Demonstrates environment variable configuration
 
 ### Resource Types
 The project follows a consistent pattern for each resource type:
@@ -26,7 +41,6 @@ The project follows a consistent pattern for each resource type:
 #### VLANs
 - [vlan.go](mdc:vlan.go) - Basic VLAN management
 - [vlan_interface.go](mdc:vlan_interface.go) - VLAN interface with IP addressing
-- [aoscxgo/vlan.go](mdc:aoscxgo/vlan.go) and [aoscxgo/vlan_interface.go](mdc:aoscxgo/vlan_interface.go) - Duplicate implementations
 
 #### Interfaces
 - [interface.go](mdc:interface.go) - Basic interface management
@@ -47,25 +61,40 @@ Each resource type implements these methods:
 #### Error Handling
 - Custom `RequestError` type defined in [util.go](mdc:util.go)
 - HTTP utilities for common operations (GET, POST, PUT, DELETE)
+- Graceful fallback for API version detection failures
 
 ## Key Files
 
-### Utilities
+### Core Components
+- [client.go](mdc:client.go) - Client connection and API version detection
 - [util.go](mdc:util.go) - HTTP request utilities and error handling
 - [full_config.go](mdc:full_config.go) - Full configuration management
 
 ### Documentation
 - [doc.go](mdc:doc.go) - Package documentation with usage examples
 - [README.md](mdc:README.md) - Project documentation
+- [env.example](mdc:env.example) - Environment variable configuration template
 
 ## Usage Examples
 
-### Basic Connection
+### Basic Connection with Auto-Detection
 ```go
 sw, err := aoscxgo.Connect(&aoscxgo.Client{
     Hostname: "switch-ip",
     Username: "admin", 
     Password: "password",
+    VerifyCertificate: false,
+    // Version will be auto-detected
+})
+```
+
+### Force Specific API Version
+```go
+sw, err := aoscxgo.Connect(&aoscxgo.Client{
+    Hostname: "switch-ip",
+    Username: "admin", 
+    Password: "password",
+    Version: "v10.10", // Force specific version
     VerifyCertificate: false,
 })
 ```
@@ -92,8 +121,20 @@ lag := aoscxgo.LagInterface{
 err = lag.Create(sw)
 ```
 
+## Environment Configuration
+
+### Required Variables
+- `AOSCX_HOSTNAME` - Switch hostname or IP address
+- `AOSCX_PASSWORD` - Switch password
+
+### Optional Variables
+- `AOSCX_USERNAME` - Switch username (defaults to "admin")
+- `AOSCX_VERSION` - Force specific API version (auto-detects if not specified)
+- `AOSCX_VERIFY_CERT` - Enable certificate verification (defaults to false)
+
 ## Project Structure Notes
-- Duplicate files exist in root and `aoscxgo/` subdirectory
-- Main development appears to be in root directory
+- Main development in root directory
 - [cmd/main.go](mdc:cmd/main.go) contains test/example code with conditional blocks
 - Go modules defined in [go.mod](mdc:go.mod)
+- Environment variables provide secure configuration
+- API version detection ensures optimal compatibility

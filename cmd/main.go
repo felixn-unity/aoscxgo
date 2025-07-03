@@ -54,16 +54,16 @@ func main() {
 		return
 	}
 
-	log.Printf("Successfully connected to switch %s", hostname)
-
-	lagdel := aoscxgo.LagInterface{
-		Name: "lag60",
-	}
+	log.Printf("Successfully connected to switch %s using API version %s", hostname, sw.Version)
 
 	if 1 == 2 {
+		lagdel := aoscxgo.LagInterface{
+			Name: "lag60",
+		}
 		err = lagdel.Delete(sw)
+
 		if err != nil {
-			log.Printf("Error in creating LAG 60: %s", err)
+			log.Printf("Error in creating LAG %s: %s", lagdel.Name, err)
 			return
 		}
 		log.Printf("LAG Deleted Success")
@@ -74,20 +74,21 @@ func main() {
 
 		err = lagdel.Delete(sw)
 		if err != nil {
-			log.Printf("Error in creating LAG 60: %s", err)
+			log.Printf("Error in creating LAG %s: %s", lagdel.Name, err)
 			return
 		}
 		log.Printf("LAG Deleted Success")
 	}
 
 	if 1 == 2 {
+
 		lagnew := aoscxgo.LagInterface{
 			Name:            "lag60",
 			Description:     "uplink VLAN",
 			AdminState:      "up",
 			VlanMode:        "native-untagged",
-			VlanTag:         200,
-			VlanIds:         []interface{}{100, 200},
+			VlanTag:         100,
+			VlanIds:         []interface{}{100, 600},
 			TrunkAllowedAll: true,
 			NativeVlanTag:   true,
 			LacpMode:        "active",
@@ -95,45 +96,30 @@ func main() {
 
 		err = lagnew.Create(sw)
 		if err != nil {
-			log.Printf("Error in creating LAG 60: %s", err)
+			log.Printf("Error in creating LAG %s: %s", lagnew.Name, err)
 			return
 		}
 		log.Printf("LAG Create Success")
+
 		lagnew = aoscxgo.LagInterface{
 			Name:          "lag70",
 			Description:   "uplink VLAN",
 			AdminState:    "up",
 			VlanMode:      "access",
-			VlanTag:       200,
+			VlanTag:       600,
 			NativeVlanTag: true,
 			LacpMode:      "active",
 		}
 
 		err = lagnew.Create(sw)
 		if err != nil {
-			log.Printf("Error in creating LAG 60: %s", err)
+			log.Printf("Error in creating LAG %s: %s", lagnew.Name, err)
 			return
 		}
 		log.Printf("LAG Create Success")
 	}
 
 	if 1 == 2 {
-
-		vlandel := aoscxgo.Vlan{
-			VlanId: 600,
-		}
-
-		err = vlandel.Delete(sw)
-
-		if err != nil {
-			log.Printf("Error in creating VLAN 100: %s", err)
-			return
-		}
-
-		log.Printf("VLAN Delete Success")
-	}
-
-	if 1 == 1 {
 
 		vlan := aoscxgo.Vlan{
 			VlanId:      600,
@@ -147,11 +133,27 @@ func main() {
 		err = vlan.Create(sw)
 
 		if err != nil {
-			log.Printf("Error in creating VLAN 100: %s", err)
+			log.Printf("Error in creating VLAN %s: %s", vlan.VlanId, err)
 			return
 		}
 
 		log.Printf("VLAN Create Success")
+	}
+
+	if 1 == 1 {
+
+		vlandel := aoscxgo.Vlan{
+			VlanId: 600,
+		}
+
+		err = vlandel.Delete(sw)
+
+		if err != nil {
+			log.Printf("Error in creating VLAN %s: %s", vlandel.VlanId, err)
+			return
+		}
+
+		log.Printf("VLAN Delete Success")
 	}
 
 	sw.Logout()
